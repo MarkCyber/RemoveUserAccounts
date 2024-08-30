@@ -1,3 +1,5 @@
+# THIS IS A WORK IN PROGRESS
+
 # Define the usernames to be removed
 $usernames = @("John.Test", "Marcus.Bonley", "Test.acc")
  
