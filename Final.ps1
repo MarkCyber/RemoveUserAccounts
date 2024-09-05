@@ -17,22 +17,22 @@ foreach ($username in $usernames) {
             $sessionInfo = (query user | Select-String $username | ForEach-Object { $_.Line -split '\s+' })
             $sessionId = $sessionInfo[2]  # Assuming session ID is in the third column
             
-            # Log off user
+            # Forcefully log off user
             logoff $sessionId /server:localhost
             Start-Sleep -Seconds 10  # Wait for logoff to complete
 
-            # Check if session still exists and reset if needed
+            # Check if session still exists and kill it if needed
             $sessionCheck = query user | Select-String $username
             if ($sessionCheck) {
-                Write-Output "Session for $username still active. Attempting to reset session..."
-                & 'reset session' $sessionId /server:localhost
-                Write-Output "$username's session was reset successfully."
+                Write-Output "Session for $username still active. Attempting to forcefully kill session..."
+                tskill $sessionId /server:localhost  # Forcefully kill the session if it is still active
+                Write-Output "$username's session was forcefully killed."
             } else {
                 Write-Output "$username logged off successfully."
             }
 
         } catch {
-            Write-Output "Failed to log off or reset session for $username."
+            Write-Output "Failed to log off or kill session for $username."
         }
 
         # Kill any lingering processes owned by the user
@@ -42,29 +42,6 @@ foreach ($username in $usernames) {
         } catch {
             Write-Output "Failed to stop some processes for $username."
         }
-    }
-
-    # Forcefully terminate any hung session using tsdiscon and tskill
-    try {
-        tsdiscon $sessionId /server:localhost
-        Write-Output "Disconnected session for $username."
-    } catch {
-        Write-Output "Failed to disconnect session for $username."
-    }
-   
-    try {
-        tskill $sessionId /server:localhost
-        Write-Output "Forcefully killed session for $username."
-    } catch {
-        Write-Output "Failed to kill session for $username."
-    }
-
-    # Restart Remote Desktop Services (TermService) to clear any remaining sessions
-    try {
-        Restart-Service -Name TermService -Force
-        Write-Output "Remote Desktop Services (TermService) restarted to clear lingering sessions."
-    } catch {
-        Write-Output "Failed to restart TermService."
     }
 
     # Remove profile using WMI (Remove-UserProfile)
