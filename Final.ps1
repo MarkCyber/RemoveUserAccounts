@@ -44,25 +44,27 @@ foreach ($username in $usernames) {
         }
     }
 
-    # Forcefully terminate any hung session
+    # Forcefully terminate any hung session using tsdiscon and tskill
     try {
-        # Query session and reset any lingering sessions
-        $session = query session | Select-String $username
-        if ($session) {
-            $sessionId = ($session -split '\s+')[2]
-            Write-Output "Forcefully resetting session for $username with session ID: $sessionId"
-            & 'reset session' $sessionId /server:localhost
-        }
+        tsdiscon $sessionId /server:localhost
+        Write-Output "Disconnected session for $username."
     } catch {
-        Write-Output "Failed to reset lingering session for $username."
+        Write-Output "Failed to disconnect session for $username."
+    }
+   
+    try {
+        tskill $sessionId /server:localhost
+        Write-Output "Forcefully killed session for $username."
+    } catch {
+        Write-Output "Failed to kill session for $username."
     }
 
-    # Restart User Profile Service to ensure profiles are unloaded
+    # Restart Remote Desktop Services (TermService) to clear any remaining sessions
     try {
-        Restart-Service -Name ProfSvc -Force
-        Write-Output "User Profile Service restarted to ensure profile cleanup for $username."
+        Restart-Service -Name TermService -Force
+        Write-Output "Remote Desktop Services (TermService) restarted to clear lingering sessions."
     } catch {
-        Write-Output "Failed to restart User Profile Service."
+        Write-Output "Failed to restart TermService."
     }
 
     # Remove profile using WMI (Remove-UserProfile)
