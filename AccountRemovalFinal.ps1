@@ -2,27 +2,24 @@ $usernames = @("John.doesNotexistttt", "Test.Account", "testingthis")
 $loggedOnUsers = Get-WmiObject -Class Win32_ComputerSystem | Select-Object -ExpandProperty UserName
 
 foreach ($username in $usernames) {
-    # Find SID
+    #Find SID
     try {
         $sid = (New-Object System.Security.Principal.NTAccount($username)).Translate([System.Security.Principal.SecurityIdentifier]).Value
     } catch {
         Write-Output "Failed to find SID for $username. Skipping..."
         continue
     }
-
-    # Get session ID for the user
+    #Get session ID for the user
     try {
         $sessionInfo = (query user | Select-String $username | ForEach-Object { $_.Line -split '\s+' })
-        $sessionId = $sessionInfo[2]  # Assuming session ID is in the third column
-        $sessionState = $sessionInfo[3] # Assuming session state is in the fourth column
-        
-        # If session state is 'Disc', we need to log them off
+        $sessionId = $sessionInfo[2]  #Assuming session ID is in the third column
+        $sessionState = $sessionInfo[3] #Assuming session state is in the fourth column
+        #If session state is 'Disc', we need to log them off
         if ($sessionState -eq 'Disc') {
             Write-Output "User $username is disconnected. Logging off session ID $sessionId..."
             logoff $sessionId /server:localhost
-            Start-Sleep -Seconds 5  # Short wait to allow logoff to complete
-
-            # Check if session still exists and kill it if needed
+            Start-Sleep -Seconds 5  #Short wait to allow logoff to complete
+            #Check if session still exists and kill it if needed
             $sessionCheck = query user | Select-String $username
             if ($sessionCheck) {
                 Write-Output "Session for $username still active. Attempting to forcefully kill session..."
@@ -38,16 +35,14 @@ foreach ($username in $usernames) {
     } catch {
         Write-Output "Failed to log off or kill session for $username."
     }
-
-    # Kill any lingering processes owned by the user
+    #Kill any lingering processes owned by the user
     try {
         Get-Process -IncludeUserName | Where-Object { $_.UserName -eq $username } | Stop-Process -Force
         Write-Output "Killed lingering processes for $username."
     } catch {
         Write-Output "Failed to stop some processes for $username."
     }
-
-    # Remove profile using WMI (Remove-UserProfile)
+    #Remove profile using WMI (Remove-UserProfile)
     try {
         Write-Output "Removing user profile for $username with SID $sid..."
         $userProfile = Get-WmiObject -Class Win32_UserProfile | Where-Object { $_.SID -eq $sid }
@@ -60,8 +55,7 @@ foreach ($username in $usernames) {
     } catch {
         Write-Output "Failed to remove profile for $username."
     }
-
-    # Remove the user's profile directory from C:\Users
+    #Remove the user's profile directory from C:\Users
     $profilePath = "C:\Users\$username"
     if (Test-Path $profilePath) {
         try {
@@ -73,8 +67,7 @@ foreach ($username in $usernames) {
     } else {
         Write-Output "Profile directory for $username does not exist in C:\Users."
     }
-
-    # Remove profile registry key from HKLM (ProfileList)
+    #Remove profile registry key from HKLM (ProfileList)
     $profileRegKeyPath = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList\$sid"
     try {
         Remove-Item -Path $profileRegKeyPath -Recurse -Force -ErrorAction SilentlyContinue
@@ -82,8 +75,7 @@ foreach ($username in $usernames) {
     } catch {
         Write-Output "Failed to remove registry entry for $username ($sid)."
     }
-
-    # Clear the last logged on user in HKLM if it's in the list
+    #Clear the last logged on user in HKLM if it's in the list
     $lastLoggedOnUserRegPath = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Authentication\LogonUI"
     try {
         $lastLoggedOnUser = (Get-ItemProperty -Path $lastLoggedOnUserRegPath -Name LastLoggedOnUser -ErrorAction SilentlyContinue).LastLoggedOnUser
@@ -94,8 +86,7 @@ foreach ($username in $usernames) {
     } catch {
         Write-Output "Failed to clear LastLoggedOnUser in the registry."
     }
-
-    # Remove user's registry from HKCU (via HKEY_USERS)
+    #Remove user's registry from HKCU (via HKEY_USERS)
     $hkuRegKeyPath = "HKEY_USERS\$sid"
     try {
         Remove-Item -Path $hkuRegKeyPath -Recurse -Force -ErrorAction SilentlyContinue
