@@ -1,4 +1,4 @@
-# THIS 
+
 
 $usernames = @("John.doesNotexistttt", "Test.Account", "testingthis")
 $loggedOnUsers = Get-WmiObject -Class Win32_ComputerSystem | Select-Object -ExpandProperty UserName
