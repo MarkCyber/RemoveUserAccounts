@@ -1,4 +1,14 @@
-$usernames = @("John.doesNotexistttt", "Test.Account", "testingthis")
+###################################################################################################################################
+###################################################################################################################################
+##########                                                                                                               ##########
+##########                     This script was created by MarkCyber at https://github.com/Markcyber                      ##########
+##########        Replacement of the hardcoded usernames to the username you want deleted is the only requirement        ##########
+##########       If you only want to remove user from login screen, then you can run it without changing usernames       ##########
+##########           This account removal process is done via windows registry modification and profile deletion         ##########
+##########                                                                                                               ##########
+###################################################################################################################################
+###################################################################################################################################
+$usernames = @("John.doesNotexistttt", "Test.Account", "testingthis") #ADD THE USERNAME/S YOU WANT TO REMOVE HERE
 $loggedOnUsers = Get-WmiObject -Class Win32_ComputerSystem | Select-Object -ExpandProperty UserName
 
 foreach ($username in $usernames) {
