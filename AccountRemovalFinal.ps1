@@ -8,6 +8,8 @@
 ##########                                                                                                               ##########
 ###################################################################################################################################
 ###################################################################################################################################
+
+
 $usernames = @("John.doesNotexistttt", "Test.Account", "testingthis") #ADD THE USERNAME/S YOU WANT TO REMOVE HERE
 $loggedOnUsers = Get-WmiObject -Class Win32_ComputerSystem | Select-Object -ExpandProperty UserName
 
